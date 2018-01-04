@@ -59,7 +59,7 @@ export class AppComponent implements OnInit{
                 return;
               }
 
-              this.fileContents += "\n\n" + content;
+              this.fileContents += "\n\n" + filename + "\n" + content;
               // first row is a header generally speaking
               if(output && output.length){
                 let headers = output[0].map(v => v.toLowerCase().replace(/percent/,'%'));
@@ -68,12 +68,12 @@ export class AppComponent implements OnInit{
                 // first field must be a valid date
                 output = output
                   .map(r => {
-                    let m = moment(r[0], "MM/DD/YYYY HH:mm:ss");
+                    let m = moment(r[0], "MM/DD/YYYY HH:mm:ss")
                     if(!m.isValid()){
                       r[0] = null;
                     }
                     else{
-                      r[0] = m;
+                      r[0] = m.unix() * 1000 + moment().utcOffset()*60*1000;
                     }
                     return r;
                   })
@@ -92,7 +92,7 @@ export class AppComponent implements OnInit{
                     if(!this.eggDataVectors[filename]) this.eggDataVectors[filename] = {};
                     this.eggDataVectors[filename][header] = output
                       .map(r => {
-                        let timestamp = r[0].unix() * 1000; // convert to unix timestamp
+                        let timestamp = r[0]; // convert to unix timestamp
                         let value = r[index];
                         return [timestamp, value];
                       })
