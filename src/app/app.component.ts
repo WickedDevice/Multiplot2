@@ -62,7 +62,7 @@ export class AppComponent implements OnInit{
               this.fileContents += "\n\n" + content;
               // first row is a header generally speaking
               if(output && output.length){
-                let headers = output[0].map(v => v.toLowerCase());
+                let headers = output[0].map(v => v.toLowerCase().replace(/percent/,'%'));
                 let numFields = headers.length;
                 output = output.slice(1);
                 // first field must be a valid date
@@ -205,56 +205,66 @@ export class AppComponent implements OnInit{
 
   redrawChart(){
     let chartOptions = {
-        chart: {
-            type: 'spline',
-            zoomType: 'xy',
-            panning: true,
-            panKey: 'shift'
-        },
-        title: {
-            text: 'Snow depth at Vikjafjellet, Norway'
-        },
-        subtitle: {
-            text: 'Irregular time data in Highcharts JS'
-        },
-        xAxis: {
-            type: 'datetime',
-            dateTimeLabelFormats: { // don't display the dummy year
-                month: '%e. %b',
-                year: '%b'
-            },
-            title: {
-                text: 'Date'
-            }
-        },
-        yAxis: {
-            title: {
-                text: 'Snow depth (m)'
-            },
-            min: 0
-        },
-        tooltip: {
-            headerFormat: '<b>{series.name}</b><br>',
-            pointFormat: '{point.x:%e. %b}: {point.y:.2f} m'
-        },
+      chart: {
+          type: 'spline',
+          zoomType: 'xy',
+          panning: true,
+          panKey: 'shift'
+      },
+      title: {
+          text: ''
+      },
+      // subtitle: {
+      //     text: 'Irregular time data in Highcharts JS'
+      // },
+      xAxis: {
+          type: 'datetime',
+          dateTimeLabelFormats: {
+            millisecond:"%A, %b %e, %H:%M:%S.%L",
+            second:"%A, %b %e, %H:%M:%S",
+            minute:"%A, %b %e, %H:%M",
+            hour:"%A, %b %e, %H:%M",
+            day:"%A, %b %e, %Y",
+            week:"Week from %A, %b %e, %Y",
+            month:"%B %Y",
+            year:"%Y"
+          },
+          title: {
+              text: 'Date'
+          }
+      },
+      yAxis: [{
+          title: {
+              text: this.primarySelected
+          }
+      }],
+      tooltip: {
+          headerFormat: '<b>{series.name}</b><br>',
+          pointFormat: '{point.x:%A, %b %e, %H:%M:%S.%L}: {point.y:.2f} '
+      },
 
-        plotOptions: {
-            spline: {
-                marker: {
-                    enabled: true
-                }
-            },
-            series: {
-              events: {
-                legendItemClick: function () {
-                    return false;
-                }
+      plotOptions: {
+          spline: {
+              marker: {
+                  enabled: true
+              }
+          },
+          series: {
+            events: {
+              legendItemClick: function () {
+                  return false;
               }
             }
-        },
+          }
+      },
 
-        series: []
+      series: []
     };
+
+    let title:any = [this.primarySelected];
+    title.push(this.secondarySelected);
+    title = title.filter(v => v && v.trim());
+    chartOptions.title.text = title.join(' and ').toString();
 
     let header = this.primarySelected;
     Object.keys(this.eggDataVectors).forEach(filename => {
@@ -267,6 +277,29 @@ export class AppComponent implements OnInit{
         })
       }
     });
+
+    if(this.secondarySelected){
+      chartOptions.yAxis.push(<any> {
+        title: {
+            text: this.secondarySelected
+        },
+        opposite: true
+      });
+
+    header = this.secondarySelected;
+     Object.keys(this.eggDataVectors).forEach(filename => {
+       if(this.excludedFiles.indexOf(filename) >= 0) return;
+
+       if(this.eggDataVectors[filename][header]){
+         chartOptions.series.push({
+           name: `${filename.split('.csv')[0]}-${header}`,
+           data: this.eggDataVectors[filename][header],
+           yAxis: 1
+         })
+       }
+     });
+
+    }
 
     Highcharts.chart(this.chartElement.nativeElement, chartOptions);
   }
