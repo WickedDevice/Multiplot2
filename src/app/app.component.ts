@@ -220,7 +220,7 @@ export class AppComponent implements OnInit{
       xAxis: {
           type: 'datetime',
           dateTimeLabelFormats: {
-            millisecond:"%A, %b %e, %H:%M:%S.%L",
+            millisecond:"%A, %b %e, %H:%M:%S",
             second:"%A, %b %e, %H:%M:%S",
             minute:"%A, %b %e, %H:%M",
             hour:"%A, %b %e, %H:%M",
@@ -240,7 +240,7 @@ export class AppComponent implements OnInit{
       }],
       tooltip: {
           headerFormat: '<b>{series.name}</b><br>',
-          pointFormat: '{point.x:%A, %b %e, %H:%M:%S.%L}: {point.y:.2f} '
+          pointFormat: '{point.x:%A, %b %e, %H:%M:%S}: {point.y:.2f} '
       },
 
       plotOptions: {
