@@ -208,6 +208,14 @@ export class AppComponent implements OnInit{
   }
 
   redrawChart(){
+    let digits = 2;
+    if(this.primarySelected && this.primarySelected.find(v => v.indexOf('[v]') >= 0)){
+      digits = 6;
+    }
+    else if(this.secondarySelected && this.secondarySelected.find(v => v.indexOf('[v]') >= 0)){
+      digits = 6;
+    }
+
     let chartOptions = {
       chart: {
           type: 'spline',
@@ -244,7 +252,7 @@ export class AppComponent implements OnInit{
       }],
       tooltip: {
           headerFormat: '<b>{series.name}</b><br>',
-          pointFormat: '{point.x:%A, %b %e, %H:%M:%S}: {point.y:.2f} '
+          pointFormat: `{point.x:%A, %b %e, %H:%M:%S}: {point.y:.${digits}f} `
       },
 
       plotOptions: {
