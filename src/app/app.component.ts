@@ -17,8 +17,8 @@ export class AppComponent implements OnInit{
   @ViewChild('container') chartElement:ElementRef;
   fileContents = "";
   form: FormGroup;
-  multiplePrimary: boolean = false;
-  multipleSecondary: boolean = false;
+  multiplePrimary: boolean = true;
+  multipleSecondary: boolean = true;
   multipleFiles: boolean = true;
   optionsPrimary: Array<any> = [];
   optionsSecondary: Array<any> = [];
@@ -160,12 +160,14 @@ export class AppComponent implements OnInit{
   }
   onPrimarySelected($event){
     console.log('onPrimarySelected', $event);
-    this.primarySelected = $event.value;
+    // this.primarySelected = $event.value;
+    this.primarySelected = this.form.value.selectPrimary.slice(0);
     this.redrawChart();
   }
   onPrimaryDeselected($event){
     console.log('onPrimaryDeselected', $event);
-    this.primarySelected = null;
+    // this.primarySelected = null;
+    this.primarySelected = this.form.value.selectPrimary.slice(0);
     this.redrawChart();
   }
 
@@ -177,12 +179,14 @@ export class AppComponent implements OnInit{
   }
   onSecondarySelected($event){
     console.log('onSecondarySelected', $event);
-    this.secondarySelected = $event.value;
+    // this.secondarySelected = $event.value;
+    this.secondarySelected = this.form.value.selectSecondary.slice(0);
     this.redrawChart();
   }
   onSecondaryDeselected($event){
     console.log('onSecondaryDeselected', $event);
-    this.secondarySelected = null;
+    // this.secondarySelected = null;
+    this.secondarySelected = this.form.value.selectSecondary.slice(0);
     this.redrawChart();
   }
 
@@ -235,7 +239,7 @@ export class AppComponent implements OnInit{
       },
       yAxis: [{
           title: {
-              text: this.primarySelected
+              text: this.primarySelected ? this.primarySelected.join(",") : ""
           }
       }],
       tooltip: {
@@ -261,43 +265,49 @@ export class AppComponent implements OnInit{
       series: []
     };
 
-    let title:any = [this.primarySelected];
-    title.push(this.secondarySelected);
+    let title:any = [this.primarySelected ? this.primarySelected.join(",") : null];
+    title.push(this.secondarySelected ? this.secondarySelected.join(",") : null);
     title = title.filter(v => v && v.trim());
     chartOptions.title.text = title.join(' and ').toString();
 
-    let header = this.primarySelected;
-    Object.keys(this.eggDataVectors).forEach(filename => {
-      if(this.excludedFiles.indexOf(filename) >= 0) return;
+    if(this.primarySelected && (this.primarySelected.length > 0)){
+      this.primarySelected.forEach((primarySelected) => {
+        let header = primarySelected;
+        Object.keys(this.eggDataVectors).forEach(filename => {
+          if(this.excludedFiles.indexOf(filename) >= 0) return;
 
-      if(this.eggDataVectors[filename][header]){
-        chartOptions.series.push({
-          name: `${filename.split('.csv')[0]}-${header}`,
-          data: this.eggDataVectors[filename][header]
-        })
-      }
-    });
+          if(this.eggDataVectors[filename][header]){
+            chartOptions.series.push({
+              name: `${filename.split('.csv')[0]}-${header}`,
+              data: this.eggDataVectors[filename][header]
+            })
+          }
+        });
+      });
+    }
 
-    if(this.secondarySelected){
+    if(this.secondarySelected && (this.secondarySelected.length > 0)){
       chartOptions.yAxis.push(<any> {
         title: {
-            text: this.secondarySelected
+            text: this.secondarySelected.join(",")
         },
         opposite: true
       });
 
-    header = this.secondarySelected;
-     Object.keys(this.eggDataVectors).forEach(filename => {
-       if(this.excludedFiles.indexOf(filename) >= 0) return;
+      this.secondarySelected.forEach((secondarySelected) => {
+        let header = secondarySelected;
+        Object.keys(this.eggDataVectors).forEach(filename => {
+         if(this.excludedFiles.indexOf(filename) >= 0) return;
 
-       if(this.eggDataVectors[filename][header]){
-         chartOptions.series.push({
-           name: `${filename.split('.csv')[0]}-${header}`,
-           data: this.eggDataVectors[filename][header],
-           yAxis: 1
-         })
-       }
-     });
+         if(this.eggDataVectors[filename][header]){
+           chartOptions.series.push({
+             name: `${filename.split('.csv')[0]}-${header}`,
+             data: this.eggDataVectors[filename][header],
+             yAxis: 1
+           })
+         }
+        });
+      });
 
     }
 
