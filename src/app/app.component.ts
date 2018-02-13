@@ -5,7 +5,7 @@ import * as parse from 'csv-parse';
 import * as moment from 'moment';
 
 declare var require: any;
-var Highcharts = require('highcharts');
+const Highcharts = require('highcharts');
 require('highcharts/modules/exporting')(Highcharts);
 
 @Component({
@@ -13,13 +13,13 @@ require('highcharts/modules/exporting')(Highcharts);
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit{
-  @ViewChild('container') chartElement:ElementRef;
-  fileContents = "";
+export class AppComponent implements OnInit {
+  @ViewChild('container') chartElement: ElementRef;
+  fileContents = '';
   form: FormGroup;
-  multiplePrimary: boolean = true;
-  multipleSecondary: boolean = true;
-  multipleFiles: boolean = true;
+  multiplePrimary = true;
+  multipleSecondary = true;
+  multipleFiles = true;
   optionsPrimary: Array<any> = [];
   optionsSecondary: Array<any> = [];
   optionsFiles: Array<any> = [];
@@ -30,50 +30,49 @@ export class AppComponent implements OnInit{
 
   allDiscoveredHeaders: any = [];
   eggDataVectors: any = {};
-  constructor(){
+  constructor() {
 
   }
 
-  ngOnInit(){
+  ngOnInit() {
     this.form = new FormGroup({});
     this.form.addControl('selectPrimary', new FormControl(''));
     this.form.addControl('selectSecondary', new FormControl(''));
     this.form.addControl('selectFiles', new FormControl(''));
   }
 
-  dragFilesDropped($event){
+  dragFilesDropped($event) {
     // console.log($event);
-    let allPromises = [];
+    const allPromises = [];
     $event.accepted.forEach((acceptedFile) => {
 
-    let p =  new Promise( (resolve, reject) => {
-        let fileReader = new FileReader();
-        let filename = acceptedFile.file.name;
+    const p =  new Promise( (resolve, reject) => {
+        const fileReader = new FileReader();
+        const filename = acceptedFile.file.name;
         fileReader.onload = () => {
             // console.log(fileReader.result);
-            let content = fileReader.result.trim();
+            const content = fileReader.result.trim();
             parse(content, {auto_parse: true, relax_column_count: true}, (err, output) => {
-              if(err){
+              if (err) {
                 console.error(filename, err);
                 reject();
                 return;
               }
 
-              this.fileContents += "\n\n" + filename + "\n" + content;
+              this.fileContents += '\n\n' + filename + '\n' + content;
               // first row is a header generally speaking
-              if(output && output.length){
-                let headers = output[0].map(v => v.toLowerCase().replace(/percent/,'%'));
-                let numFields = headers.length;
+              if (output && output.length) {
+                const headers = output[0].map(v => v.toLowerCase().replace(/percent/, '%'));
+                const numFields = headers.length;
                 output = output.slice(1);
                 // first field must be a valid date
                 output = output
                   .map(r => {
-                    let m = moment(r[0], "MM/DD/YYYY HH:mm:ss")
-                    if(!m.isValid()){
+                    const m = moment(r[0], 'MM/DD/YYYY HH:mm:ss');
+                    if (!m.isValid()) {
                       r[0] = null;
-                    }
-                    else{
-                      r[0] = m.unix() * 1000 + moment().utcOffset()*60*1000;
+                    } else {
+                      r[0] = m.unix() * 1000 + moment().utcOffset() * 60 * 1000;
                     }
                     return r;
                   })
@@ -83,17 +82,17 @@ export class AppComponent implements OnInit{
 
                 // collect all headers
                 headers.forEach((header, index) => {
-                  if(this.allDiscoveredHeaders.indexOf(header) < 0){
+                  if (this.allDiscoveredHeaders.indexOf(header) < 0) {
                     this.allDiscoveredHeaders.push(header);
                   }
 
                   // create a data vector in this egg, for this header
-                  if(index > 0){ // don't do it for the timestamp column
-                    if(!this.eggDataVectors[filename]) this.eggDataVectors[filename] = {};
+                  if (index > 0) { // don't do it for the timestamp column
+                    if (!this.eggDataVectors[filename]) { this.eggDataVectors[filename] = {}; }
                     this.eggDataVectors[filename][header] = output
                       .map(r => {
-                        let timestamp = r[0]; // convert to unix timestamp
-                        let value = r[index];
+                        const timestamp = r[0]; // convert to unix timestamp
+                        const value = r[index];
                         return [timestamp, value];
                       })
                       .filter(r => this.isNumeric(r[1]));
@@ -102,8 +101,7 @@ export class AppComponent implements OnInit{
 
                 console.log(`promised completed for ${filename}`);
                 resolve();
-              }
-              else{
+              } else {
                 console.error(`no output for ${filename}`);
                 reject();
               }
@@ -124,7 +122,7 @@ export class AppComponent implements OnInit{
         return {
           value: h,
           label: h
-        }
+        };
       })
       .filter(o => ['timestamp'].indexOf(o.label) < 0);
 
@@ -132,7 +130,7 @@ export class AppComponent implements OnInit{
         return {
           value: h,
           label: h
-        }
+        };
       })
       .filter(o => ['timestamp'].indexOf(o.label) < 0);
 
@@ -140,83 +138,86 @@ export class AppComponent implements OnInit{
         return {
           value: f,
           label: f
-        }
+        };
       });
     })
     .catch((err) => {
       console.error(err);
-    })
+    });
   }
 
   isNumeric(n) {
     return !isNaN(parseFloat(n)) && isFinite(n);
   }
 
-  onPrimaryOpened(){
+  onPrimaryOpened() {
     console.log('onPrimaryOpened');
   }
-  onPrimaryClosed(){
+  onPrimaryClosed() {
     console.log('onPrimaryClosed');
   }
-  onPrimarySelected($event){
+  onPrimarySelected($event) {
     console.log('onPrimarySelected', $event);
     // this.primarySelected = $event.value;
     this.primarySelected = this.form.value.selectPrimary.slice(0);
     this.redrawChart();
   }
-  onPrimaryDeselected($event){
+  onPrimaryDeselected($event) {
     console.log('onPrimaryDeselected', $event);
     // this.primarySelected = null;
     this.primarySelected = this.form.value.selectPrimary.slice(0);
     this.redrawChart();
   }
 
-  onSecondaryOpened(){
+  onSecondaryOpened() {
     console.log('onSecondaryOpened');
   }
-  onSecondaryClosed(){
+  onSecondaryClosed() {
     console.log('onSecondaryClosed');
   }
-  onSecondarySelected($event){
+  onSecondarySelected($event) {
     console.log('onSecondarySelected', $event);
     // this.secondarySelected = $event.value;
     this.secondarySelected = this.form.value.selectSecondary.slice(0);
     this.redrawChart();
   }
-  onSecondaryDeselected($event){
+  onSecondaryDeselected($event) {
     console.log('onSecondaryDeselected', $event);
     // this.secondarySelected = null;
     this.secondarySelected = this.form.value.selectSecondary.slice(0);
     this.redrawChart();
   }
 
-  onFilesOpened(){
+  onFilesOpened() {
     console.log('onFilesOpened');
   }
-  onFilesClosed(){
+  onFilesClosed() {
     console.log('onFilesClosed');
   }
-  onFilesSelected($event){
+  onFilesSelected($event) {
     console.log('onFilesSelected', $event);
     this.excludedFiles = this.form.value.selectFiles.slice(0);
     this.redrawChart();
   }
-  onFilesDeselected($event){
+  onFilesDeselected($event) {
     console.log('onFilesDeselected', $event);
     this.excludedFiles = this.form.value.selectFiles.slice(0);
     this.redrawChart();
   }
 
-  redrawChart(){
+  redrawChart() {
     let digits = 2;
-    if(this.primarySelected && this.primarySelected.find(v => v.indexOf('[v]') >= 0)){
-      digits = 6;
-    }
-    else if(this.secondarySelected && this.secondarySelected.find(v => v.indexOf('[v]') >= 0)){
-      digits = 6;
-    }
+    ['v', 'volt', 'volts'].forEach(unit => {
+      if (this.primarySelected
+        && this.primarySelected.find(v => v.toLowerCase().indexOf(unit) >= 0)) {
+        digits = 6;
+      } else if (this.secondarySelected
+        && this.secondarySelected.find(v => v.toLowerCase().indexOf(unit) >= 0)) {
+        digits = 6;
+      }
+    });
 
-    let chartOptions = {
+    const chartOptions = {
       chart: {
           type: 'spline',
           zoomType: 'xy',
@@ -232,14 +233,14 @@ export class AppComponent implements OnInit{
       xAxis: {
           type: 'datetime',
           dateTimeLabelFormats: {
-            millisecond:"%A, %b %e, %H:%M:%S",
-            second:"%A, %b %e, %H:%M:%S",
-            minute:"%A, %b %e, %H:%M",
-            hour:"%A, %b %e, %H:%M",
-            day:"%A, %b %e, %Y",
-            week:"Week from %A, %b %e, %Y",
-            month:"%B %Y",
-            year:"%Y"
+            millisecond: '%A, %b %e, %H:%M:%S',
+            second: '%A, %b %e, %H:%M:%S',
+            minute: '%A, %b %e, %H:%M',
+            hour: '%A, %b %e, %H:%M',
+            day: '%A, %b %e, %Y',
+            week: 'Week from %A, %b %e, %Y',
+            month: '%B %Y',
+            year: '%Y'
           },
           title: {
               text: 'Date'
@@ -247,7 +248,7 @@ export class AppComponent implements OnInit{
       },
       yAxis: [{
           title: {
-              text: this.primarySelected ? this.primarySelected.join(",") : ""
+              text: this.primarySelected ? this.primarySelected.join(',') : ''
           }
       }],
       tooltip: {
@@ -273,46 +274,46 @@ export class AppComponent implements OnInit{
       series: []
     };
 
-    let title:any = [this.primarySelected ? this.primarySelected.join(",") : null];
-    title.push(this.secondarySelected ? this.secondarySelected.join(",") : null);
+    let title: any = [this.primarySelected ? this.primarySelected.join(',') : null];
+    title.push(this.secondarySelected ? this.secondarySelected.join(',') : null);
     title = title.filter(v => v && v.trim());
     chartOptions.title.text = title.join(' and ').toString();
 
-    if(this.primarySelected && (this.primarySelected.length > 0)){
+    if (this.primarySelected && (this.primarySelected.length > 0)) {
       this.primarySelected.forEach((primarySelected) => {
-        let header = primarySelected;
+        const header = primarySelected;
         Object.keys(this.eggDataVectors).forEach(filename => {
-          if(this.excludedFiles.indexOf(filename) >= 0) return;
+          if (this.excludedFiles.indexOf(filename) >= 0) { return; }
 
-          if(this.eggDataVectors[filename][header]){
+          if (this.eggDataVectors[filename][header]) {
             chartOptions.series.push({
               name: `${filename.split('.csv')[0]}-${header}`,
               data: this.eggDataVectors[filename][header]
-            })
+            });
           }
         });
       });
     }
 
-    if(this.secondarySelected && (this.secondarySelected.length > 0)){
+    if (this.secondarySelected && (this.secondarySelected.length > 0)) {
       chartOptions.yAxis.push(<any> {
         title: {
-            text: this.secondarySelected.join(",")
+            text: this.secondarySelected.join(',')
         },
         opposite: true
       });
 
       this.secondarySelected.forEach((secondarySelected) => {
-        let header = secondarySelected;
+        const header = secondarySelected;
         Object.keys(this.eggDataVectors).forEach(filename => {
-         if(this.excludedFiles.indexOf(filename) >= 0) return;
+         if (this.excludedFiles.indexOf(filename) >= 0) { return; }
 
-         if(this.eggDataVectors[filename][header]){
+         if (this.eggDataVectors[filename][header]) {
            chartOptions.series.push({
              name: `${filename.split('.csv')[0]}-${header}`,
              data: this.eggDataVectors[filename][header],
              yAxis: 1
-           })
+           });
          }
         });
       });
