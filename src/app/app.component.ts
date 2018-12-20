@@ -68,7 +68,11 @@ export class AppComponent implements OnInit {
                 // first field must be a valid date
                 output = output
                   .map(r => {
-                    const m = moment(r[0], 'MM/DD/YYYY HH:mm:ss');
+                    // first check if it parses as a normal ISO8601 formatted string
+                    let m = moment(r[0], 'YYYY-MM-DDTHH:mm:ssZ');
+                    if (!m.isValid()) {
+                      m = moment(r[0], 'MM/DD/YYYY HH:mm:ss');
+                    }
                     if (!m.isValid()) {
                       r[0] = null;
                     } else {
