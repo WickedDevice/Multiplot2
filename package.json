@@ -28,6 +28,7 @@
     "moment": "^2.20.1",
     "ng2-file-drop": "^1.1.0",
     "rxjs": "^5.4.1",
+    "setimmediate": "^1.0.5",
     "zone.js": "^0.8.14"
   },
   "devDependencies": {

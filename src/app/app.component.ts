@@ -1,6 +1,7 @@
 import { Component, ElementRef, ViewChild, OnInit } from '@angular/core';
 import {FormControl, FormGroup} from '@angular/forms';
 
+import 'setimmediate';
 import * as parse from 'csv-parse';
 import * as moment from 'moment';
 
@@ -51,7 +52,7 @@ export class AppComponent implements OnInit {
         const filename = acceptedFile.file.name;
         fileReader.onload = () => {
             // console.log(fileReader.result);
-            const content = fileReader.result.trim();
+            const content = (<any> fileReader.result).trim();
             parse(content, {auto_parse: true, relax_column_count: true}, (err, output) => {
               if (err) {
                 console.error(filename, err);
