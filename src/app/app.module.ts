@@ -1,12 +1,14 @@
-import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
 import { ReactiveFormsModule } from '@angular/forms';
+
 
 import { AppComponent } from './app.component';
 
-import { Ng2FileDropModule }  from 'ng2-file-drop';
 import { HighchartsStatic } from 'angular2-highcharts/dist/HighchartsService';
-import { SelectModule } from 'angular2-select';
+import { NgSelectModule } from '@ng-select/ng-select';
+import { FileDropModule } from 'ngx-file-drop';
+import { PapaParseModule } from 'ngx-papaparse';
 
 export declare let require: any;
 export function highchartsFactory() {
@@ -22,9 +24,10 @@ export function highchartsFactory() {
   ],
   imports: [
     BrowserModule,
-    Ng2FileDropModule,
+    FileDropModule,
     ReactiveFormsModule,
-    SelectModule
+    NgSelectModule,
+    PapaParseModule
   ],
   providers: [
     {provide: HighchartsStatic, useFactory: highchartsFactory}

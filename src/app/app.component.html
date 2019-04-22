@@ -1,47 +1,41 @@
 <div style="text-align:center">
-  <div ng2FileDrop class="custom-component-drop-zone" [ng2FileDropAcceptMultiple]="true"
-    (ng2FileDropFilesDropped)="dragFilesDropped($event)">
+  <file-drop class="custom-component-drop-zone"
+    (onFileDrop)="dragFilesDropped($event)">
     Drag files here
-  </div>
+  </file-drop>
 </div>
 <form style="padding:18px;max-width:800px;" [formGroup]="form">
   <div style="margin:5px 0;font-weight:600;">Primary Axis</div>
   <ng-select
-	  [options]="optionsPrimary"
+	  [items]="optionsPrimary"
 	  [multiple]="multiplePrimary"
 	  placeholder="Select Primary"
     formControlName="selectPrimary"
-	  [allowClear]="true"
-    (opened)="onPrimaryOpened()"
-    (closed)="onPrimaryClosed()"
-    (selected)="onPrimarySelected($event)"
-    (deselected)="onPrimaryDeselected($event)">
+    (open)="onPrimaryOpened()"
+    (close)="onPrimaryClosed()"
+    (change)="onPrimarySelected($event)">
 	</ng-select>
 
   <div style="margin:5px 0;font-weight:600;">Secondary Axis</div>
   <ng-select
-	  [options]="optionsSecondary"
+	  [items]="optionsSecondary"
 	  [multiple]="multipleSecondary"
 	  placeholder="Select Secondary"
     formControlName="selectSecondary"
-	  [allowClear]="true"
-    (opened)="onSecondaryOpened()"
-    (closed)="onSecondaryClosed()"
-    (selected)="onSecondarySelected($event)"
-    (deselected)="onSecondaryDeselected($event)">
+    (open)="onSecondaryOpened()"
+    (close)="onSecondaryClosed()"
+    (change)="onSecondarySelected($event)">
 	</ng-select>
 
   <div style="margin:5px 0;font-weight:600;">File Exclusion Filter</div>
   <ng-select
-	  [options]="optionsFiles"
+	  [items]="optionsFiles"
 	  [multiple]="multipleFiles"
 	  placeholder="Exclude Files"
     formControlName="selectFiles"
-	  [allowClear]="true"
-    (opened)="onFilesOpened()"
-    (closed)="onFilesClosed()"
-    (selected)="onFilesSelected($event)"
-    (deselected)="onFilesDeselected($event)">
+    (open)="onFilesOpened()"
+    (close)="onFilesClosed()"
+    (change)="onFilesSelected($event)">
 	</ng-select>
 </form>
 

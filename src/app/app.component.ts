@@ -1,8 +1,9 @@
 import { Component, ElementRef, ViewChild, OnInit } from '@angular/core';
-import {FormControl, FormGroup} from '@angular/forms';
+import { FormControl, FormGroup } from '@angular/forms';
+import { UploadEvent, UploadFile, FileSystemFileEntry, FileSystemDirectoryEntry } from 'ngx-file-drop';
 
-import 'setimmediate';
-import * as parse from 'csv-parse';
+// import 'setimmediate';
+import { Papa } from 'ngx-papaparse';
 import * as moment from 'moment';
 
 declare var require: any;
@@ -31,7 +32,7 @@ export class AppComponent implements OnInit {
 
   allDiscoveredHeaders: any = [];
   eggDataVectors: any = {};
-  constructor() {
+  constructor(private papa: Papa) {
 
   }
 
@@ -45,74 +46,84 @@ export class AppComponent implements OnInit {
   dragFilesDropped($event) {
     // console.log($event);
     const allPromises = [];
-    $event.accepted.forEach((acceptedFile) => {
+    $event.files.forEach((acceptedFile) => {
 
     const p =  new Promise( (resolve, reject) => {
         const fileReader = new FileReader();
-        const filename = acceptedFile.file.name;
+        const filename = acceptedFile.relativePath;
         fileReader.onload = () => {
             // console.log(fileReader.result);
             const content = (<any> fileReader.result).trim();
-            parse(content, {auto_parse: true, relax_column_count: true}, (err, output) => {
-              if (err) {
+            this.papa.parse(content, {
+              dynamicTyping: true,
+              header: false,
+              error: (err, file) => {
                 console.error(filename, err);
                 reject();
-                return;
-              }
+              },
+              complete: (result) => {
+                let output = result.data;
+                this.fileContents += '\n\n' + filename + '\n' + content;
+                // first row is a header generally speaking
+                if (output && output.length) {
+                  const headers = output[0].map(v => v.toLowerCase().replace(/percent/, '%'));
+                  const numFields = headers.length;
+                  output = output.slice(1);
+                  // first field must be a valid date
+                  output = output
+                    .map(r => {
+                      // first check if it parses as a normal ISO8601 formatted string
+                      let m = moment(r[0], 'YYYY-MM-DDTHH:mm:ssZ');
+                      if (!m.isValid()) {
+                        m = moment(r[0], 'MM/DD/YYYY HH:mm:ss');
+                      }
+                      if (!m.isValid()) {
+                        r[0] = null;
+                      } else {
+                        r[0] = m.unix() * 1000 + moment().utcOffset() * 60 * 1000;
+                      }
+                      return r;
+                    })
+                    .filter(r => r[0] && (r.length === headers.length));
 
-              this.fileContents += '\n\n' + filename + '\n' + content;
-              // first row is a header generally speaking
-              if (output && output.length) {
-                const headers = output[0].map(v => v.toLowerCase().replace(/percent/, '%'));
-                const numFields = headers.length;
-                output = output.slice(1);
-                // first field must be a valid date
-                output = output
-                  .map(r => {
-                    // first check if it parses as a normal ISO8601 formatted string
-                    let m = moment(r[0], 'YYYY-MM-DDTHH:mm:ssZ');
-                    if (!m.isValid()) {
-                      m = moment(r[0], 'MM/DD/YYYY HH:mm:ss');
+                  // console.log(filename, headers, output);
+
+                  // collect all headers
+                  headers.forEach((header, index) => {
+                    if (this.allDiscoveredHeaders.indexOf(header) < 0) {
+                      this.allDiscoveredHeaders.push(header);
                     }
-                    if (!m.isValid()) {
-                      r[0] = null;
-                    } else {
-                      r[0] = m.unix() * 1000 + moment().utcOffset() * 60 * 1000;
+
+                    // create a data vector in this egg, for this header
+                    if (index > 0) { // don't do it for the timestamp column
+                      if (!this.eggDataVectors[filename]) { this.eggDataVectors[filename] = {}; }
+                      this.eggDataVectors[filename][header] = output
+                        .map(r => {
+                          const timestamp = r[0]; // convert to unix timestamp
+                          const value = r[index];
+                          return [timestamp, value];
+                        })
+                        .filter(r => this.isNumeric(r[1]));
                     }
-                    return r;
-                  })
-                  .filter(r => r[0] && (r.length === headers.length));
+                  });
 
-                // console.log(filename, headers, output);
-
-                // collect all headers
-                headers.forEach((header, index) => {
-                  if (this.allDiscoveredHeaders.indexOf(header) < 0) {
-                    this.allDiscoveredHeaders.push(header);
-                  }
-
-                  // create a data vector in this egg, for this header
-                  if (index > 0) { // don't do it for the timestamp column
-                    if (!this.eggDataVectors[filename]) { this.eggDataVectors[filename] = {}; }
-                    this.eggDataVectors[filename][header] = output
-                      .map(r => {
-                        const timestamp = r[0]; // convert to unix timestamp
-                        const value = r[index];
-                        return [timestamp, value];
-                      })
-                      .filter(r => this.isNumeric(r[1]));
-                  }
-                });
-
-                console.log(`promised completed for ${filename}`);
-                resolve();
-              } else {
-                console.error(`no output for ${filename}`);
-                reject();
+                  console.log(`promised completed for ${filename}`);
+                  resolve();
+                } else {
+                  console.error(`no output for ${filename}`);
+                  reject();
+                }
               }
             });
+
         };
-        fileReader.readAsText(acceptedFile.file);
+
+        acceptedFile.fileEntry.file((file) => {
+          fileReader.readAsText(file);
+        }, (err) => {
+          reject(err);
+        });
+
       });
 
       allPromises.push(p);
@@ -164,13 +175,14 @@ export class AppComponent implements OnInit {
   onPrimarySelected($event) {
     console.log('onPrimarySelected', $event);
     // this.primarySelected = $event.value;
-    this.primarySelected = this.form.value.selectPrimary.slice(0);
+    // this.primarySelected = this.form.value.selectPrimary.slice(0);
+    this.primarySelected = $event.slice().map(v => v.value);
     this.redrawChart();
   }
   onPrimaryDeselected($event) {
     console.log('onPrimaryDeselected', $event);
     // this.primarySelected = null;
-    this.primarySelected = this.form.value.selectPrimary.slice(0);
+    // this.primarySelected = this.form.value.selectPrimary.slice(0);
     this.redrawChart();
   }
 
@@ -183,13 +195,14 @@ export class AppComponent implements OnInit {
   onSecondarySelected($event) {
     console.log('onSecondarySelected', $event);
     // this.secondarySelected = $event.value;
-    this.secondarySelected = this.form.value.selectSecondary.slice(0);
+    // this.secondarySelected = this.form.value.selectSecondary.slice(0);
+    this.secondarySelected = $event.slice().map(v => v.value);
     this.redrawChart();
   }
   onSecondaryDeselected($event) {
     console.log('onSecondaryDeselected', $event);
     // this.secondarySelected = null;
-    this.secondarySelected = this.form.value.selectSecondary.slice(0);
+    // this.secondarySelected = this.form.value.selectSecondary.slice(0);
     this.redrawChart();
   }
 
@@ -201,12 +214,13 @@ export class AppComponent implements OnInit {
   }
   onFilesSelected($event) {
     console.log('onFilesSelected', $event);
-    this.excludedFiles = this.form.value.selectFiles.slice(0);
+    // this.excludedFiles = this.form.value.selectFiles.slice(0);
+    this.excludedFiles = $event.slice().map(v => v.value);
     this.redrawChart();
   }
   onFilesDeselected($event) {
     console.log('onFilesDeselected', $event);
-    this.excludedFiles = this.form.value.selectFiles.slice(0);
+    // this.excludedFiles = this.form.value.selectFiles.slice(0);
     this.redrawChart();
   }
 
