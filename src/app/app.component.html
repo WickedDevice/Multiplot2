@@ -1,5 +1,7 @@
 <div style="text-align:center">
   <file-drop class="custom-component-drop-zone"
+    [showBrowseBtn]="true"
+    [browseBtnClassName]="'my-browse-button'"
     (onFileDrop)="dragFilesDropped($event)">
     Drag files here
   </file-drop>
