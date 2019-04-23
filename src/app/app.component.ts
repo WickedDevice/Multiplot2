@@ -73,9 +73,9 @@ export class AppComponent implements OnInit {
                   output = output
                     .map(r => {
                       // first check if it parses as a normal ISO8601 formatted string
-                      let m = moment(r[0], 'YYYY-MM-DDTHH:mm:ssZ');
+                      let m = moment(r[0], 'YYYY-MM-DDTHH:mm:ssZ', true);
                       if (!m.isValid()) {
-                        m = moment(r[0], 'MM/DD/YYYY HH:mm:ss');
+                        m = moment(r[0], 'MM/DD/YYYY HH:mm:ss', true);
                       }
                       if (!m.isValid()) {
                         r[0] = null;
