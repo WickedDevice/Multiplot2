@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, OnInit } from '@angular/core';
+import { Component, ElementRef, ViewChild, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { UploadEvent, UploadFile, FileSystemFileEntry, FileSystemDirectoryEntry } from 'ngx-file-drop';
 
@@ -26,18 +26,25 @@ export class AppComponent implements OnInit {
   optionsSecondary: Array<any> = [];
   optionsFiles: Array<any> = [];
 
+  chartTypeSelected = 'line';
+  xSelected;
   primarySelected;
   secondarySelected;
   excludedFiles = [];
 
   allDiscoveredHeaders: any = [];
   eggDataVectors: any = {};
-  constructor(private papa: Papa) {
+  constructor(private papa: Papa, private cdr: ChangeDetectorRef) {
 
   }
 
   ngOnInit() {
     this.form = new FormGroup({});
+    this.form.addControl('selectChartType', new FormControl('line'));
+
+    const xForm = new FormControl('');
+    xForm.setValue(null);
+    this.form.addControl('selectX', xForm);
     this.form.addControl('selectPrimary', new FormControl(''));
     this.form.addControl('selectSecondary', new FormControl(''));
     this.form.addControl('selectFiles', new FormControl(''));
@@ -166,6 +173,44 @@ export class AppComponent implements OnInit {
     return !isNaN(parseFloat(n)) && isFinite(n);
   }
 
+
+  onXOpened() {
+    console.log('onXOpened');
+  }
+  onXClosed() {
+    console.log('onXClosed');
+  }
+  onXSelected($event) {
+    console.log('onXSelected', $event);
+    // this.primarySelected = $event.value;
+    // this.primarySelected = this.form.value.selectPrimary.slice(0);
+    if ($event && $event.value) {
+      this.xSelected = $event.value;
+    } else {
+      this.xSelected = '';
+    }
+
+    this.cdr.detectChanges();
+
+    this.redrawChart();
+  }
+
+
+  onChartTypeOpened() {
+    console.log('onChartTypeOpened');
+  }
+  onChartTypeClosed() {
+    console.log('onChartTypeClosed');
+  }
+  onChartTypeSelected($event) {
+    console.log('onChartTypeSelected', $event);
+    // this.primarySelected = $event.value;
+    // this.primarySelected = this.form.value.selectPrimary.slice(0);
+    this.chartTypeSelected = $event;
+    this.redrawChart();
+  }
+
+
   onPrimaryOpened() {
     console.log('onPrimaryOpened');
   }
@@ -236,9 +281,19 @@ export class AppComponent implements OnInit {
       }
     });
 
-    const chartOptions = {
+    let chartType;
+    switch(this.chartTypeSelected) {
+      case 'scatter':
+        chartType = 'scatter';
+        break;
+      default:
+        chartType = 'spline';
+        break;
+    }
+
+    const chartOptions: any = {
       chart: {
-          type: 'spline',
+          type: chartType,
           zoomType: 'xy',
           panning: true,
           panKey: 'shift'
@@ -293,6 +348,42 @@ export class AppComponent implements OnInit {
       series: []
     };
 
+    if (this.chartTypeSelected === 'scatter') {
+      chartOptions.xAxis =  {
+        title: {
+            enabled: true,
+            text: this.xSelected
+        },
+        startOnTick: true,
+        endOnTick: true,
+        showLastLabel: true
+      };
+
+      delete chartOptions.plotOptions.spline;
+      chartOptions.plotOptions.scatter = {
+        marker: {
+          radius: 5,
+          states: {
+            hover: {
+              enabled: true,
+              lineColor: 'rgb(100,100,100)'
+            }
+          }
+        },
+        states: {
+          hover: {
+            marker: {
+              enabled: false
+            }
+          }
+        },
+        tooltip: {
+          headerFormat: '<b>{series.name}</b><br>',
+          pointFormat: '{point.x}, {point.y}'
+        }
+      };
+    }
+
     let title: any = [this.primarySelected ? this.primarySelected.join(',') : null];
     title.push(this.secondarySelected ? this.secondarySelected.join(',') : null);
     title = title.filter(v => v && v.trim());
@@ -305,9 +396,23 @@ export class AppComponent implements OnInit {
           if (this.excludedFiles.indexOf(filename) >= 0) { return; }
 
           if (this.eggDataVectors[filename][header]) {
+
+            let data = this.eggDataVectors[filename][header];
+            if (this.chartTypeSelected === 'scatter') {
+              const xVector = this.eggDataVectors[filename][this.xSelected];
+              if (xVector) {
+                data = data.map((v, idx) => {
+                  return [
+                    xVector[idx][1],
+                    v[1]
+                  ];
+                });
+              }
+            }
+
             chartOptions.series.push({
               name: `${filename.split('.csv')[0]}-${header}`,
-              data: this.eggDataVectors[filename][header]
+              data
             });
           }
         });
@@ -328,9 +433,23 @@ export class AppComponent implements OnInit {
          if (this.excludedFiles.indexOf(filename) >= 0) { return; }
 
          if (this.eggDataVectors[filename][header]) {
+
+          let data = this.eggDataVectors[filename][header];
+          if (this.chartTypeSelected === 'scatter') {
+            const xVector = this.eggDataVectors[filename][this.xSelected];
+            if (xVector) {
+              data = data.map((v, idx) => {
+                return [
+                  xVector[idx][1],
+                  v[1]
+                ];
+              });
+            }
+          }
+
            chartOptions.series.push({
              name: `${filename.split('.csv')[0]}-${header}`,
-             data: this.eggDataVectors[filename][header],
+             data,
              yAxis: 1
            });
          }

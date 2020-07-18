@@ -7,6 +7,28 @@
   </file-drop>
 </div>
 <form style="padding:18px;max-width:800px;" [formGroup]="form">
+
+  <div style="margin:5px 0;font-weight:600;">Chart Type</div>
+  <ng-select
+	  [items]="['line', 'scatter']"
+    [multiple]="false"
+	  placeholder="Select Chart Type"
+    formControlName="selectChartType"
+    (open)="onChartTypeOpened()"
+    (close)="onChartTypeClosed()"
+    (change)="onChartTypeSelected($event)">
+	</ng-select>
+
+  <div style="margin:5px 0;font-weight:600;">X Axis</div>
+  <ng-select *ngIf="chartTypeSelected === 'scatter'"
+	  [items]="optionsPrimary"
+	  placeholder="Select X Axis"
+    formControlName="selectX"
+    (open)="onXOpened()"
+    (close)="onXClosed()"
+    (change)="onXSelected($event)">
+	</ng-select>
+
   <div style="margin:5px 0;font-weight:600;">Primary Axis</div>
   <ng-select
 	  [items]="optionsPrimary"
