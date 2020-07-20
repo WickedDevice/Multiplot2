@@ -36,6 +36,9 @@ export class AppComponent implements OnInit {
   eggDataVectors: any = {};
   constructor(private papa: Papa, private cdr: ChangeDetectorRef) {
 
+    // example from https://www.youtube.com/watch?v=83x0gtaJgq0
+    // const {a, b} = this.calculateExponentialModelParameters([0,1,3,5,7,9], [1, .891, .708, .562, .447, .355]);
+    // console.log(a, b);
   }
 
   ngOnInit() {
@@ -408,6 +411,14 @@ export class AppComponent implements OnInit {
                   ];
                 });
               }
+
+              try {
+                const {a, b} = this.calculateExponentialModelParameters(data.map(v => v[0]), data.map(v => v[1]));
+                console.log(a, b);
+              } catch (e) {
+                console.error(e);
+              }
+
             }
 
             chartOptions.series.push({
@@ -445,6 +456,14 @@ export class AppComponent implements OnInit {
                 ];
               });
             }
+
+            try {
+              const {a, b} = this.calculateExponentialModelParameters(data.map(v => v[0]), data.map(v => v[1]));
+              console.log(a, b);
+            } catch (e) {
+              console.error(e);
+            }
+
           }
 
            chartOptions.series.push({
@@ -460,4 +479,68 @@ export class AppComponent implements OnInit {
 
     Highcharts.chart(this.chartElement.nativeElement, chartOptions);
   }
+
+  // least squares fit to exponential model y = a * exp(bx)
+  // given set of (x_i, y_i)...
+  // first apply transform to data into z
+  // note: z = ln(y0) = a0 + a1*x; where a0 = ln(a) and a1 = b; (a,b) from above
+  // then calculate average value of z_i ... =  z_bar
+  // and caclculate average value of x_i ... = x_bar
+  // a0 and a1 can be calculated using standard linear regression formula
+  //
+  // a1 = n*SUM(xi * zi) - SUM(xi)*SUM(zi)
+  //      --------------------------------
+  //          n*SUM(xi^2) - (SUM(xi))^2
+  //
+  // a0 = z_bar - a1 * x_bar
+  //
+  // so calculate (for use in a1 evaluation):
+  //    SUM(xi * zi)
+  //    SUM(xi)
+  //    SUM(zi)
+  //    SUM(xi^2)
+  //
+  // finally, calculate (a, b) from (a0, a1)
+  // a = exp(a0)
+  // b = a1
+
+  sum(vector) {
+    const sum = vector.reduce((t, v) => t + (+v), 0);
+    return sum;
+  }
+  average(vector) {
+    const sum = this.sum(vector);
+    const n = vector.length;
+    return 1.0 * sum / n;
+  }
+  min(vector) {
+    const min = vector.reduce((t, v) => v < t ? v : t, Number.MAX_VALUE);
+    return min;
+  }
+
+  calculateExponentialModelParameters(x_vector, y_vector) {
+    // const min = this.min(x_vector);
+    // x_vector = x_vector.map(v => v - min);
+    const n = x_vector.length;
+    const x_bar = this.average(x_vector);
+    const z_vector = y_vector.map(v => Math.log(+v));
+    const z_bar = this.average(z_vector);
+    const xz_vector = x_vector.map((v, idx) => v * z_vector[idx]);
+    const sum_xz = this.sum(xz_vector);
+    const sum_x = this.sum(x_vector);
+    const sum_z = this.sum(z_vector);
+    const xsquared_vector = x_vector.map(v => v * v);
+    const sum_xsquared = this.sum(xsquared_vector);
+
+    const a1 = ((n * sum_xz)       - (sum_x * sum_z)) /
+               ((n * sum_xsquared) - (sum_x * sum_x));
+
+    const a0 = z_bar - a1 * x_bar;
+
+    const a = Math.exp(a0);
+    const b = a1;
+
+    return {a, b};
+  }
+
 }

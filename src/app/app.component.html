@@ -19,15 +19,17 @@
     (change)="onChartTypeSelected($event)">
 	</ng-select>
 
-  <div style="margin:5px 0;font-weight:600;">X Axis</div>
-  <ng-select *ngIf="chartTypeSelected === 'scatter'"
-	  [items]="optionsPrimary"
-	  placeholder="Select X Axis"
-    formControlName="selectX"
-    (open)="onXOpened()"
-    (close)="onXClosed()"
-    (change)="onXSelected($event)">
-	</ng-select>
+  <ng-container *ngIf="chartTypeSelected === 'scatter'">
+    <div style="margin:5px 0;font-weight:600;">X Axis</div>
+    <ng-select
+      [items]="optionsPrimary"
+      placeholder="Select X Axis"
+      formControlName="selectX"
+      (open)="onXOpened()"
+      (close)="onXClosed()"
+      (change)="onXSelected($event)">
+    </ng-select>
+  </ng-container>
 
   <div style="margin:5px 0;font-weight:600;">Primary Axis</div>
   <ng-select
