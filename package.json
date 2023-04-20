@@ -29,7 +29,7 @@
     "moment": "^2.24.0",
     "ng2-file-drop": "^5.0.0",
     "ngx-file-drop": "^6.0.0",
-    "ngx-papaparse": "^3.0.2",
+    "ngx-papaparse": "^7.0.0",
     "rxjs": "^6.4.0",
     "setimmediate": "^1.0.5",
     "stream": "0.0.2",
